@@ -3,7 +3,7 @@ function cage = GetCompCage(Img, offset, simplify, flag1, showResult)
 % flag1: normalize to [-1 1]
 
 [im,~,mask]=imread(Img);
-figure; image(im);
+
 s = 1;
 if size(mask,1)>3000
     s = 3000/size(mask,1);

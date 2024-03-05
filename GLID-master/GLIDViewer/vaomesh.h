@@ -410,8 +410,8 @@ struct GLMesh
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         //glBlendFunc(GL_ONE, GL_ONE);
 
-        glActiveTexture(GL_TEXTURE0);
-        tex.bind();
+        glActiveTexture(GL_TEXTURE0);//激活纹理
+        tex.bind();//绑定纹理
 
         prog.bind();
         prog.setUniform("depthMode", depthMode);
@@ -825,7 +825,7 @@ R"( #version 330
         FragColor = vec4( (id & 0x000000FF) >>  0, (id & 0x0000FF00) >>  8, (id & 0x00FF0000) >> 16, 255.f)/255.f;
     })");
 
-        colormapTex.setImage(MyImage((BYTE*)jetmaprgb, sizeof(jetmaprgb) / 3, 1, sizeof(jetmaprgb) / 3, 3));
+        colormapTex.setImage(MyImage((BYTE*)jetmaprgb, sizeof(jetmaprgb) / 3, 1, sizeof(jetmaprgb) , 3));//
         colormapTex.setClamping(GL_CLAMP_TO_EDGE);
     }
 };

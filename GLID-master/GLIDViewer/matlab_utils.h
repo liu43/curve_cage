@@ -320,39 +320,86 @@ void matlab2eigen(const std::string &name, Matrix &v, bool temp=false)
         getMatEngine().eval( "clear " + tempname + ";");
 }
 
-inline Eigen::MatrixXcd matlab2eigenComplex(const std::string &name)
+//inline Eigen::MatrixXcd matlab2eigenComplex(const std::string &name)
+//{
+//	mxArray *m = getMatEngine().getVariable(name);
+//    if (!m) return Eigen::MatrixXcd();
+//
+//    ensure(!mxIsSparse(m), "matrix is sparse!"); 
+//
+//    const mwSize *dim = mxGetDimensions(m);
+//    Eigen::MatrixXcd v(dim[0], dim[1]);
+//    v.real() = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> >(mxGetPr(m), dim[0], dim[1]);
+//
+//    if (mxIsComplex(m))
+//        v.imag() = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> >(mxGetPi(m), dim[0], dim[1]);
+//    else
+//        v.imag().setZero();
+//
+//	mxDestroyArray(m);
+//    return v;
+//}
+
+inline Eigen::MatrixXcd matlab2eigenComplex(const std::string& name)
 {
-	mxArray *m = getMatEngine().getVariable(name);
-    if (!m) return Eigen::MatrixXcd();
+	mxArray* m = getMatEngine().getVariable(name);
+	if (!m) return Eigen::MatrixXcd();
 
-    ensure(!mxIsSparse(m), "matrix is sparse!"); 
+	ensure(!mxIsSparse(m), "matrix is sparse!");
 
-    const mwSize *dim = mxGetDimensions(m);
-    Eigen::MatrixXcd v(dim[0], dim[1]);
-    v.real() = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> >(mxGetPr(m), dim[0], dim[1]);
+	const mwSize* dim = mxGetDimensions(m);
+	Eigen::MatrixXcd v(dim[0], dim[1]);
 
-    if (mxIsComplex(m))
-        v.imag() = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> >(mxGetPi(m), dim[0], dim[1]);
-    else
-        v.imag().setZero();
+	// 检查是否为复数
+	if (mxIsComplex(m)) {
+		auto complexData = mxGetComplexDoubles(m);
+		for (mwIndex i = 0; i < dim[0] * dim[1]; ++i) {
+			v(i) = std::complex<double>(complexData[i].real, complexData[i].imag);
+		}
+	}
+	else {
+		double* realData = mxGetDoubles(m);
+		for (mwIndex i = 0; i < dim[0] * dim[1]; ++i) {
+			v(i) = std::complex<double>(realData[i], 0.0);
+		}
+	}
 
 	mxDestroyArray(m);
-    return v;
+	return v;
 }
 
 
+//template<class Mat>
+//inline void eigen2matlabComplex(const std::string &name, const Mat &vr, const Mat &vi)
+//{
+//    mwSize dim[] = { vr.rows(), vr.cols() };
+//    mxArray *m = mxCreateNumericArray(2, dim, MatlabNum<double>::id, mxCOMPLEX);
+//
+//    using MapMat = Eigen::Map < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> > ;
+//    MapMat(mxGetPr(m), dim[0], dim[1]) = vr;
+//    MapMat(mxGetPi(m), dim[0], dim[1]) = vi;
+//
+//    getMatEngine().putVariable(name, m);
+//    mxDestroyArray(m);
+//}
+//lsb
 template<class Mat>
-inline void eigen2matlabComplex(const std::string &name, const Mat &vr, const Mat &vi)
+inline void eigen2matlabComplex(const std::string& name, const Mat& vr, const Mat& vi)
 {
-    mwSize dim[] = { vr.rows(), vr.cols() };
-    mxArray *m = mxCreateNumericArray(2, dim, MatlabNum<double>::id, mxCOMPLEX);
+	mwSize dim[] = { static_cast<mwSize>(vr.rows()), static_cast<mwSize>(vr.cols()) };
+	mxArray* m = mxCreateNumericArray(2, dim, mxDOUBLE_CLASS, mxCOMPLEX);
 
-    using MapMat = Eigen::Map < Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> > ;
-    MapMat(mxGetPr(m), dim[0], dim[1]) = vr;
-    MapMat(mxGetPi(m), dim[0], dim[1]) = vi;
+	auto complexData = mxGetComplexDoubles(m);
 
-    getMatEngine().putVariable(name, m);
-    mxDestroyArray(m);
+	for (mwIndex j = 0; j < dim[1]; ++j) {
+		for (mwIndex i = 0; i < dim[0]; ++i) {
+			complexData[j * dim[0] + i].real = vr(i, j);
+			complexData[j * dim[0] + i].imag = vi(i, j);
+		}
+	}
+
+	getMatEngine().putVariable(name, m);
+	mxDestroyArray(m);
 }
 
 template <class M>

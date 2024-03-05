@@ -1,6 +1,6 @@
 %% set parameters
-
-if exist('cage_offset', 'var')~=1
+fprintf('p2p_harmonic_perp.m\n');
+if exist('cage_offset', 'var')~=1  %若不存在这些变量，则设置默认参数
     fprintf('setting default parameters for p2p-harmonic deformation\n');
     cage_offset = 1e-1;
     numVirtualVertices = 1;
@@ -10,6 +10,7 @@ end
 
 numDenseEvaluationSamples = numEnergySamples;
 
+ %若不存在这些变量，则设置默认参数
 if exist('p2p_weight', 'var')~=1,       p2p_weight = 1e5;       end
 if exist('numIterations', 'var')~=1,    numIterations = 3;      end
 if exist('energy_parameter', 'var')~=1, energy_parameter = 1;   end

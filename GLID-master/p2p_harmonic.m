@@ -1,5 +1,5 @@
 fprintf('\n\n');
-
+fprintf('p2p_harmonic.m\n');
 if hasGPUComputing
     myGPUArray = @(x) gpuArray(x);
 else

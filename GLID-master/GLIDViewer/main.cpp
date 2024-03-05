@@ -1,4 +1,4 @@
-#define FREEGLUT_STATIC
+//#define FREEGLUT_STATIC //lsb
 #include "gl_core_3_3.h"
 #include <GL/glut.h>
 #include <GL/freeglut_ext.h>
@@ -19,6 +19,7 @@
 #include "VAOMesh.h"
 
 #include "matlabDeformer.h"
+#include<iostream>
 
 using namespace std;
 
@@ -103,19 +104,20 @@ void deformMesh()
 
 void loadP2PConstraints()
 {
-    if (!getMatEngine().hasVar("P2PVtxIds"))
+    if (!getMatEngine().hasVar("P2PVtxIds"))//matlab中是否存在p2pVtxIds
         return;
     
     Eigen::MatrixXi p2pidx;
-    matlab2eigen("int32(P2PVtxIds)-1", p2pidx, true);
-
+    matlab2eigen("int32(P2PVtxIds)-1", p2pidx, true);//将matlab中的p2pVtxids转化为整数矩阵p2pidx
+    
+    //将matlab空间中的single(fC2R(P2PCurrentPositions))转为浮点矩阵p2pdst，转到实数再转为单精度浮点数
     Eigen::Matrix<float, Eigen::Dynamic, 2, Eigen::RowMajor> p2pdst;
     matlab2eigen("single(fC2R(P2PCurrentPositions))", p2pdst, true);
 
     M.setConstraintVertices(p2pidx.data(), p2pdst.data(), p2pidx.size());
 
 
-    // load anchors from matlab if it's there
+    // load anchors from matlab if it's there, trun to a int vector
     if (getMatEngine().hasVar("interpAnchID")) 
         M.auxVtxIdxs=matlab2vector<int>("int32(interpAnchID)-1", true);
 
@@ -124,12 +126,11 @@ void loadP2PConstraints()
 
 void loadData(std::string dataset)
 {
-    double numMeshVertex = matlab2scalar("numMeshVertex", 1e4);
-
+    double numMeshVertex = matlab2scalar("numMeshVertex", 1e4);//网格顶点数
     matlabEval("clear;");
     scalar2matlab("numMeshVertex", numMeshVertex);
     string2matlab("working_dataset", dataset);
-    matlabEval("deformer_main;");   ///////
+    matlabEval("deformer_main;");   ///////执行脚本deformer_main
 
     dataset = matlab2string("working_dataset");
     for (int i = 0; i < dataset_names.size(); i++) if (dataset_names[i] == dataset) { idataset = i; break; }
@@ -149,12 +150,14 @@ void loadData(std::string dataset)
     matlab2eigen("int32(T)-1", t, true);
 
     if (x.rows() == 0 || t.rows() == 0) return;
-
-    textureFile = matlab2string("imgfilepath");
-    M.tex.setImage(textureFile);
+    textureFile = "H:\\curvedcage\\crj\\curvedcage\\curve_cage\\GLID-master\\data\\rex\\image.png";
+    printf("%s\n", textureFile.c_str());
+    textureFile = matlab2string("imgfilepath");//从matlab中获取纹理文件路径lsb find wrong
+    printf("%s\n", textureFile.c_str());
+    M.tex.setImage(textureFile);//将纹理设置到M网格上
     M.tex.setClamping(GL_CLAMP_TO_EDGE);
 
-    M.mTextureScale = 1.f;
+    M.mTextureScale = 1.f;//纹理的缩放和包装
     if (getMatEngine().hasVar("textureScale"))
         M.mTextureScale = float(matlab2scalar("textureScale"));
 
@@ -166,8 +169,8 @@ void loadData(std::string dataset)
 
     M.showTexture = true;
     M.edgeWidth = 0;
-
-    M.upload(x, t, uv.data());
+    std::cout << "load vertex"<<std::endl;
+    M.upload(x, t, uv.data());//将顶点、三角形和纹理坐标数据上传到网格对象M
 
     M.updateBBox();
 
@@ -227,7 +230,8 @@ void display()
     glViewport(0, 0, viewport[2], viewport[3]);
 	M.draw(viewport);
 
-    if(showATB) TwDraw();
+    //if(showATB) TwDraw();
+    TwDraw();//lsb
 	glutSwapBuffers();
 
 	//glFinish();
@@ -252,7 +256,7 @@ void onKeyboard(unsigned char code, int x, int y)
             }
             break;
         case ' ':
-            showATB = !showATB;
+            //showATB = !showATB;//lsb注释
             break;
         }
     }
@@ -373,6 +377,7 @@ void createTweakbar()
     bar = TwNewBar("MeshViewer");
     TwDefine(" MeshViewer size='220 150' color='0 128 255' text=dark alpha=128 position='5 5' label='Mesh Viewer'"); // change default tweak bar size and color
 
+
     TwAddVarRO(bar, "#Vertex", TW_TYPE_INT32, &M.nVertex, " group='Mesh View'");
 
     TwAddVarCB(bar, "WireFrame", TW_TYPE_BOOLCPP, 
@@ -433,8 +438,11 @@ int main(int argc, char *argv[])
 
     glutTimerFunc(1000, [](int) {
         getMatEngine().connect("");
-        matlabEval("list_datasets;");
-        dataset_names = matlab2strings("datasets");
+        matlabEval("list_datasets;");//执行MATLAB命令list_datasets;可能是用来列出所有可用的数据集。
+        dataset_names = matlab2strings("datasets"); //将MATLAB中的datasets变量（由上一行的MATLAB命令生成的）转为字符串列表。
+        printf("test main\n");
+        printf("%i\n", dataset_names.size());
+        cout << dataset_names.size() << endl;
         createTweakbar();
         loadData("");
     },

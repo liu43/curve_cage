@@ -251,6 +251,7 @@ void GLTexture::allocateStorage(int w, int h, int internalFormat, int inputForma
 
 void GLTexture::setImage(const MyImage &img, bool allocated, int internalFormat)
 {
+    printf("setImage\n");
     bind();
     if (!internalFormat) internalFormat = imDim2glTexFormat(img.dim());
     if (!allocated)  allocateStorage(img.width(), img.height(), internalFormat);
